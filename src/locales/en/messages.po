@@ -1,0 +1,52 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-10-21 22:28+0530\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+
+#: src/pages/ProductDetails.jsx:85
+msgid "Back to products"
+msgstr "Back to products"
+
+#: src/components/LocaleSwitcher.jsx:24
+msgid "Language"
+msgstr "Language"
+
+#: src/pages/ProductDetails.jsx:89
+msgid "Loading…"
+msgstr "Loading…"
+
+#: src/pages/ProductListing.jsx:71
+msgid "No products found"
+msgstr "No products found"
+
+#: src/pages/ProductDetails.jsx:23
+#: src/pages/ProductListing.jsx:40
+msgid "Price"
+msgstr "Price"
+
+#: src/pages/ProductDetails.jsx:21
+#: src/pages/ProductListing.jsx:25
+msgid "Product ID"
+msgstr "Product ID"
+
+#: src/pages/ProductDetails.jsx:22
+#: src/pages/ProductListing.jsx:29
+msgid "Product Logo"
+msgstr "Product Logo"
+
+#: src/pages/ProductListing.jsx:33
+msgid "Product Name"
+msgstr "Product Name"
+
+#: src/pages/ProductDetails.jsx:91
+msgid "Product not found"
+msgstr "Product not found"
+
+#: src/pages/ProductDetails.jsx:24
+#: src/pages/ProductListing.jsx:44
+msgid "Stock"
+msgstr "Stock"

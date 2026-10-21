@@ -1,0 +1,114 @@
+# Builds, tags and pushes the UI image to GitHub Container Registry (ghcr.io).
+#   pull request -> build only (nothing pushed)
+#   push to main -> push  ghcr.io/<owner>/product-ui:sha-<commit>  and  :main
+#   tag vX.Y.Z   -> check the tag matches package.json AND that product-backend:X.Y.Z exists,
+#                   then give that commit's image the  :X.Y.Z  and  :X.Y  tags (re-tagged, not rebuilt)
+# Release the backend first: a UI version is only published once the backend has the same version.
+#
+# No secrets needed: the workflow logs in with its built-in GITHUB_TOKEN (packages: write).
+name: ui image
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  image:
+    permissions:
+      contents: read
+      packages: write
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Work out tags
+        id: tags
+        run: |
+          # ghcr.io image names must be lowercase
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "IMAGE=ghcr.io/$owner/product-ui" >> "$GITHUB_ENV"
+          echo "BACKEND_IMAGE=ghcr.io/$owner/product-backend" >> "$GITHUB_ENV"
+          echo "sha=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+            pkg_version="$(node -p "require('./package.json').version")"
+            if [[ "$version" != "$pkg_version" ]]; then
+              echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $pkg_version. Run scripts/release.sh $version instead of tagging by hand."
+              exit 1
+            fi
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+            echo "minor=${version%.*}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        if: github.event_name != 'pull_request'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # keeps the two repos in lockstep: no product-ui:X.Y.Z without product-backend:X.Y.Z
+      - name: Check the backend has this version
+        if: steps.tags.outputs.version != ''
+        run: |
+          if ! docker buildx imagetools inspect "$BACKEND_IMAGE:${{ steps.tags.outputs.version }}" > /dev/null 2>&1; then
+            echo "::error::$BACKEND_IMAGE:${{ steps.tags.outputs.version }} does not exist. Release the backend as v${{ steps.tags.outputs.version }} first, then re-run this job."
+            exit 1
+          fi
+
+      # release: re-tag the image already built for this commit on main
+      - name: Promote the main build
+        id: promote
+        if: steps.tags.outputs.version != ''
+        run: |
+          if docker buildx imagetools inspect "$IMAGE:${{ steps.tags.outputs.sha }}" > /dev/null 2>&1; then
+            docker buildx imagetools create \
+              -t "$IMAGE:${{ steps.tags.outputs.version }}" \
+              -t "$IMAGE:${{ steps.tags.outputs.minor }}" \
+              "$IMAGE:${{ steps.tags.outputs.sha }}"
+            echo "done=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No image for ${{ steps.tags.outputs.sha }} yet (tagged a commit that wasn't built on main); building it now."
+          fi
+
+      - name: Build (and push)
+        if: steps.promote.outputs.done != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.tags.outputs.sha }}
+            ${{ github.ref == 'refs/heads/main' && format('{0}:main', env.IMAGE) || '' }}
+            ${{ steps.tags.outputs.version && format('{0}:{1}', env.IMAGE, steps.tags.outputs.version) || '' }}
+            ${{ steps.tags.outputs.minor && format('{0}:{1}', env.IMAGE, steps.tags.outputs.minor) || '' }}
+          # image.source links the package to this repo, which is what lets GITHUB_TOKEN push to it
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.tags.outputs.version || steps.tags.outputs.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

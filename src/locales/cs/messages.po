@@ -1,0 +1,52 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-10-21 22:28+0530\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: cs\n"
+
+#: src/pages/ProductDetails.jsx:85
+msgid "Back to products"
+msgstr "Zpět na produkty"
+
+#: src/components/LocaleSwitcher.jsx:24
+msgid "Language"
+msgstr "Jazyk"
+
+#: src/pages/ProductDetails.jsx:89
+msgid "Loading…"
+msgstr "Načítání…"
+
+#: src/pages/ProductListing.jsx:71
+msgid "No products found"
+msgstr "Nebyly nalezeny žádné produkty"
+
+#: src/pages/ProductDetails.jsx:23
+#: src/pages/ProductListing.jsx:40
+msgid "Price"
+msgstr "Cena"
+
+#: src/pages/ProductDetails.jsx:21
+#: src/pages/ProductListing.jsx:25
+msgid "Product ID"
+msgstr "ID produktu"
+
+#: src/pages/ProductDetails.jsx:22
+#: src/pages/ProductListing.jsx:29
+msgid "Product Logo"
+msgstr "Logo produktu"
+
+#: src/pages/ProductListing.jsx:33
+msgid "Product Name"
+msgstr "Název produktu"
+
+#: src/pages/ProductDetails.jsx:91
+msgid "Product not found"
+msgstr "Produkt nebyl nalezen"
+
+#: src/pages/ProductDetails.jsx:24
+#: src/pages/ProductListing.jsx:44
+msgid "Stock"
+msgstr "Skladem"
